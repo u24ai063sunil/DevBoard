@@ -1,9 +1,12 @@
+  // ← must be FIRST line
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const authRoutes = require('./routes/authRoutes');
+const AppError = require('./utils/AppError');
 
 const app = express();
 
@@ -39,7 +42,7 @@ app.use(morgan('dev'));
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
+app.use('/api/auth', authRoutes);
 // (More routes added in later phases)
 
 // ── 404 handler ───────────────────────────────────────────────────
@@ -49,10 +52,32 @@ app.use((req, res) => {
 
 // ── Global error handler (always LAST middleware) ─────────────────
 app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
+  let error = { ...err, message: err.message };
+
+  // Mongoose bad ObjectId → 404
+  if (err.name === 'CastError') {
+    error = new AppError(`Resource not found`, 404);
+  }
+
+  // Mongoose duplicate key (e.g. unique email) → 400
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    error = new AppError(`${field} already exists`, 400);
+  }
+
+  // Mongoose validation error → 400
+  if (err.name === 'ValidationError') {
+    const message = Object.values(err.errors).map((e) => e.message).join(', ');
+    error = new AppError(message, 400);
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') error = new AppError('Invalid token', 401);
+  if (err.name === 'TokenExpiredError') error = new AppError('Token expired', 401);
+
+  res.status(error.statusCode || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: error.message || 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
