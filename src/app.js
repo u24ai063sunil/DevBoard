@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const AppError = require('./utils/AppError');
 const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const app = express();
 
 // ── Security middleware ──────────────────────────────────────────
@@ -48,6 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/tasks', taskRoutes); // nested route
 // ── 404 handler ───────────────────────────────────────────────────
+app.use('/api', uploadRoutes);
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
