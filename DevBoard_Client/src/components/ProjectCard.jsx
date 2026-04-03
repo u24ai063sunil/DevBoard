@@ -38,7 +38,7 @@ const ProjectCard = ({ project }) => {
         <button
           onClick={handleDelete}
           disabled={deleteProject.isPending}
-          className="text-gray-600 hover:text-red-400 transition text-lg leading-none ml-2 flex-shrink-0"
+          className="text-gray-600 hover:text-red-400 transition text-lg leading-none ml-2 shrink-0"
         >
           ×
         </button>
