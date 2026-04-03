@@ -86,5 +86,32 @@ const getMe = catchAsync(async (req, res, next) => {
 
   res.status(200).json({ success: true, user });
 });
+// PATCH /api/auth/change-password
+const changePassword = catchAsync(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body
 
-module.exports = { register, login, refreshToken, logout, getMe };
+  if (!currentPassword || !newPassword) {
+    return next(new AppError('Please provide current and new password', 400))
+  }
+
+  // Get user with password
+  const user = await User.findById(req.user.id).select('+password')
+
+  // Check current password is correct
+  if (!(await user.comparePassword(currentPassword))) {
+    return next(new AppError('Current password is incorrect', 401))
+  }
+
+  // Set new password — pre-save hook hashes it automatically
+  user.password = newPassword
+  user.passwordChangedAt = new Date()
+  await user.save()
+
+  res.status(200).json({
+    success: true,
+    message: 'Password changed successfully',
+  })
+})
+
+// Add to exports
+module.exports = { register, login, refreshToken, logout, getMe, changePassword }

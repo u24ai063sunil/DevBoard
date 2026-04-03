@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { register, login, refreshToken, logout, getMe } = require('../controllers/authController');
+const { register, login, refreshToken, logout, getMe, changePassword } = require('../controllers/authController');
 const { protect } = require('../middlewares/authMiddleware');
 const validate = require('../middlewares/validate');
 const { registerSchema, loginSchema } = require('../validators/authValidators');
@@ -136,5 +136,5 @@ router.post('/logout', logout);
  *         description: Not authenticated
  */
 router.get('/me', protect, getMe);
-
+router.patch('/change-password', protect, changePassword)
 module.exports = router;

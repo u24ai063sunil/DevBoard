@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import ProjectDetail from './pages/ProjectDetail'
 import ProtectedRoute from './components/ProtectedRoute'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -19,7 +20,9 @@ function App() {
         <Route path="/projects/:id" element={
           <ProtectedRoute><ProjectDetail /></ProtectedRoute>
         }/>
-
+        <Route path="/profile" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        }/>
         <Route path="/"  element={<Navigate to="/dashboard" replace />} />
         <Route path="*"  element={<Navigate to="/login" replace />} />
       </Routes>

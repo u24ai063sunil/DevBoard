@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 
 const Navbar = () => {
@@ -15,26 +15,39 @@ const Navbar = () => {
       <div className="max-w-6xl mx-auto flex justify-between items-center">
 
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">D</span>
           </div>
           <span className="text-white font-bold text-lg">DevBoard</span>
-        </div>
+        </Link>
 
-        {/* User info + logout */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
+        {/* Right side */}
+        <div className="flex items-center gap-3">
+
+          {/* Profile link */}
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 hover:opacity-80 transition"
+          >
             {/* Avatar */}
-            <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user?.name?.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-indigo-500 flex items-center justify-center flex-shrink-0">
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white text-sm font-medium">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
             <span className="text-gray-300 text-sm hidden sm:block">
               {user?.name}
             </span>
-          </div>
+          </Link>
 
           <button
             onClick={handleLogout}
