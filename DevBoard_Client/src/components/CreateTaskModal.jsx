@@ -10,6 +10,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     priority: 'medium',
     status: 'todo',
     estimatedHours: '',
+    dueDate: '',
   })
   const [error, setError] = useState('')
 
@@ -22,12 +23,19 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     e.preventDefault()
     if (!formData.title.trim()) return setError('Task title is required')
 
+    // Validate due date is not in the past
+    if (formData.dueDate) {
+      const due = new Date(formData.dueDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (due < today) return setError('Due date cannot be in the past')
+    }
+
     try {
       const payload = {
         ...formData,
-        estimatedHours: formData.estimatedHours
-          ? Number(formData.estimatedHours)
-          : undefined,
+        estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
+        dueDate: formData.dueDate || undefined,
       }
       await createTask.mutateAsync(payload)
       onClose()
@@ -36,20 +44,21 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     }
   }
 
+  // Get today's date in YYYY-MM-DD format for min attribute
+  const today = new Date().toISOString().split('T')[0]
+
   return (
     <div
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md"
+        className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-white font-semibold text-lg">New Task</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl leading-none">
-            ×
-          </button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl leading-none">×</button>
         </div>
 
         {error && (
@@ -62,9 +71,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Task title *
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Task title *</label>
             <input
               type="text"
               name="title"
@@ -78,9 +85,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
             <textarea
               name="description"
               value={formData.description}
@@ -123,20 +128,31 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </div>
           </div>
 
-          {/* Estimated hours */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Estimated hours
-            </label>
-            <input
-              type="number"
-              name="estimatedHours"
-              value={formData.estimatedHours}
-              onChange={handleChange}
-              placeholder="e.g. 4"
-              min="0"
-              className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
-            />
+          {/* Due date + Estimated hours */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Due date</label>
+              <input
+                type="date"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleChange}
+                min={today}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Est. hours</label>
+              <input
+                type="number"
+                name="estimatedHours"
+                value={formData.estimatedHours}
+                onChange={handleChange}
+                placeholder="e.g. 4"
+                min="0"
+                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
           </div>
 
           {/* Buttons */}
@@ -156,7 +172,6 @@ const CreateTaskModal = ({ projectId, onClose }) => {
               {createTask.isPending ? 'Creating...' : 'Create task'}
             </button>
           </div>
-
         </form>
       </div>
     </div>

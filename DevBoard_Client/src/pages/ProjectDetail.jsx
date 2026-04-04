@@ -7,6 +7,7 @@ import TaskFilters from '../components/TaskFilters'
 import { useProject, useTasks } from '../hooks/useTasks'
 import MembersModal from '../components/MembersModal'
 import { useQueryClient } from '@tanstack/react-query'
+import { getDueDateStatus } from '../utils/dateUtils'
 
 const statusColumns = ['todo', 'in-progress', 'in-review', 'done']
 const columnLabels  = { 'todo': 'Todo', 'in-progress': 'In Progress', 'in-review': 'In Review', 'done': 'Done' }
@@ -51,7 +52,13 @@ const ProjectDetail = () => {
   const doneCount  = allTasks.filter((t) => t.status === 'done').length
   const progress   = allTasks.length ? Math.round((doneCount / allTasks.length) * 100) : 0
   const isFiltered = search || priority || status
+  const overdueCount = allTasks.filter(t =>
+    getDueDateStatus(t.dueDate, t.status)?.type === 'overdue'
+  ).length
 
+  const dueTodayCount = allTasks.filter(t =>
+    getDueDateStatus(t.dueDate, t.status)?.type === 'today'
+  ).length
   if (projectLoading) {
     return (
       <div className="min-h-screen bg-gray-950">
@@ -134,7 +141,28 @@ const ProjectDetail = () => {
             </div>
           </div>
         )}
-
+        {/* Overdue alert banner */}
+        {(overdueCount > 0 || dueTodayCount > 0) && (
+          <div className="flex gap-3 mb-6 flex-wrap">
+            {overdueCount > 0 && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-2 rounded-lg">
+                <span className="font-bold">!</span>
+                <span>{overdueCount} overdue task{overdueCount > 1 ? 's' : ''}</span>
+                <button
+                  onClick={() => setStatus('todo')}
+                  className="underline hover:no-underline text-xs ml-1"
+                >
+                  view
+                </button>
+              </div>
+            )}
+            {dueTodayCount > 0 && (
+              <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm px-4 py-2 rounded-lg">
+                <span>{dueTodayCount} due today</span>
+              </div>
+            )}
+          </div>
+        )}
         {/* Search + Filters */}
         <TaskFilters
           search={search}     setSearch={setSearch}

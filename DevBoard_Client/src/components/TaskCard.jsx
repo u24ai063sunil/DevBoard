@@ -1,4 +1,5 @@
 import { useUpdateTask, useDeleteTask } from '../hooks/useTasks'
+import { getDueDateStatus, formatDate } from '../utils/dateUtils'
 
 const statusOptions = ['todo', 'in-progress', 'in-review', 'done']
 
@@ -16,15 +17,21 @@ const statusColors = {
   'done':        'bg-green-500/10 text-green-400',
 }
 
+const dueDateColors = {
+  overdue: 'bg-red-500/10 text-red-400 border border-red-500/20',
+  today:   'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+  soon:    'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  normal:  'bg-gray-500/10 text-gray-400',
+}
+
 const TaskCard = ({ task, projectId }) => {
   const updateTask = useUpdateTask(projectId)
   const deleteTask = useDeleteTask(projectId)
 
+  const dueDateStatus = getDueDateStatus(task.dueDate, task.status)
+
   const handleStatusChange = async (e) => {
-    await updateTask.mutateAsync({
-      id: task._id,
-      data: { status: e.target.value },
-    })
+    await updateTask.mutateAsync({ id: task._id, data: { status: e.target.value } })
   }
 
   const handleDelete = async (e) => {
@@ -35,17 +42,23 @@ const TaskCard = ({ task, projectId }) => {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition">
+    <div className={`bg-gray-900 border rounded-xl p-4 transition ${
+      dueDateStatus?.type === 'overdue'
+        ? 'border-red-500/30 hover:border-red-500/50'
+        : 'border-gray-800 hover:border-gray-700'
+    }`}>
 
       {/* Header */}
       <div className="flex justify-between items-start gap-2 mb-2">
-        <h4 className={`text-sm font-medium flex-1 ${task.status === 'done' ? 'line-through text-gray-500' : 'text-white'}`}>
+        <h4 className={`text-sm font-medium flex-1 ${
+          task.status === 'done' ? 'line-through text-gray-500' : 'text-white'
+        }`}>
           {task.title}
         </h4>
         <button
           onClick={handleDelete}
           disabled={deleteTask.isPending}
-          className="text-gray-600 hover:text-red-400 transition text-lg leading-none shrink-0"
+          className="text-gray-600 hover:text-red-400 transition text-lg leading-none flex-shrink-0"
         >
           ×
         </button>
@@ -53,9 +66,7 @@ const TaskCard = ({ task, projectId }) => {
 
       {/* Description */}
       {task.description && (
-        <p className="text-gray-400 text-xs mb-3 line-clamp-2">
-          {task.description}
-        </p>
+        <p className="text-gray-400 text-xs mb-3 line-clamp-2">{task.description}</p>
       )}
 
       {/* Badges */}
@@ -75,6 +86,22 @@ const TaskCard = ({ task, projectId }) => {
         )}
       </div>
 
+      {/* Due date alert */}
+      {dueDateStatus && (
+        <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg mb-3 w-fit ${dueDateColors[dueDateStatus.type]}`}>
+          {dueDateStatus.type === 'overdue' && <span>!</span>}
+          {dueDateStatus.type === 'today'   && <span>!</span>}
+          <span>{dueDateStatus.label}</span>
+        </div>
+      )}
+
+      {/* Due date (normal display) */}
+      {task.dueDate && !dueDateStatus && task.status === 'done' && (
+        <p className="text-gray-500 text-xs mb-3">
+          Due {formatDate(task.dueDate)}
+        </p>
+      )}
+
       {/* Status dropdown */}
       <select
         value={task.status}
@@ -92,7 +119,7 @@ const TaskCard = ({ task, projectId }) => {
       {/* Completed date */}
       {task.completedAt && (
         <p className="text-gray-500 text-xs mt-2">
-          Done {new Date(task.completedAt).toLocaleDateString()}
+          Done {formatDate(task.completedAt)}
         </p>
       )}
     </div>
