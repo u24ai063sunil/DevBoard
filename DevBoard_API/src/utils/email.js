@@ -73,5 +73,43 @@ const sendPasswordResetEmail = async ({ to, name, resetToken }) => {
     `,
   })
 }
+const sendVerificationEmail = async ({ to, name, verifyToken }) => {
+  const verifyUrl = `http://localhost:5000/api/auth/verify-email?token=${verifyToken}`
+  const transporter = createTransporter()
 
-module.exports = { sendWelcomeEmail, sendTaskAssignedEmail, sendPasswordResetEmail }
+  await transporter.sendMail({
+    from: `"DevBoard" <${process.env.EMAIL_FROM}>`,
+    to,
+    subject: 'Verify your DevBoard email',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #4f46e5; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0;">DevBoard</h1>
+        </div>
+        <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px;">
+          <h2 style="color: #1e293b;">Hi ${name}, verify your email</h2>
+          <p style="color: #475569; line-height: 1.6;">
+            Thanks for signing up! Click the button below to verify your email address.
+            This link expires in <strong>24 hours</strong>.
+          </p>
+          <a href="${verifyUrl}"
+            style="display: inline-block; background: #4f46e5; color: white;
+            padding: 12px 24px; border-radius: 8px; text-decoration: none;
+            font-weight: bold; margin-top: 16px;">
+            Verify Email
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+            If you didn't create this account, ignore this email.
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+module.exports = {
+  sendWelcomeEmail,
+  sendVerificationEmail,
+  sendTaskAssignedEmail,
+  sendPasswordResetEmail,
+}

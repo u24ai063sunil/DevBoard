@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    emailVerificationToken:   String,
+    emailVerificationExpires: Date,
     refreshTokens: [String], // store active refresh tokens for logout-all support
     passwordChangedAt: Date,
     passwordResetToken: String,
@@ -63,6 +65,21 @@ userSchema.methods.createPasswordResetToken = function () {
   // Return unhashed token — this goes in the email link
   return resetToken
 }
+
+userSchema.methods.createEmailVerificationToken = function () {
+  const verifyToken = crypto.randomBytes(32).toString('hex')
+
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verifyToken)
+    .digest('hex')
+
+  // Expires in 24 hours
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000
+
+  return verifyToken
+}
+
 // ── Pre-save hook: hash password before saving ──────────────────────
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;

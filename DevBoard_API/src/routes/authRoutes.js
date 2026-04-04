@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
-
+const express = require('express')
+const router  = express.Router()
 const {
-  register, login, refreshToken, logout,
-  getMe, changePassword, forgotPassword, resetPassword,
+  register, login, verifyEmail, resendVerification,
+  refreshToken, logout, getMe,
+  changePassword, forgotPassword, resetPassword,
 } = require('../controllers/authController')
-const { protect } = require('../middlewares/authMiddleware');
-const validate = require('../middlewares/validate');
-const { registerSchema, loginSchema } = require('../validators/authValidators');
+const { protect } = require('../middlewares/authMiddleware')
+const validate    = require('../middlewares/validate')
+const { registerSchema, loginSchema } = require('../validators/authValidators')
 
 /**
  * @swagger
@@ -89,7 +89,8 @@ router.post('/register', validate(registerSchema), register);
  *         description: Invalid email or password
  */
 router.post('/login', validate(loginSchema), login);
-
+router.get ('/verify-email',         verifyEmail)
+router.post('/resend-verification',  resendVerification)
 /**
  * @swagger
  * /api/auth/refresh:

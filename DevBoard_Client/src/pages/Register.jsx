@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
+import api from '../api/axios'
 
 const Register = () => {
-  const navigate  = useNavigate()
-  const register  = useAuthStore((state) => state.register)
-
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: '',
   })
-  const [error,   setError]   = useState('')
-  const [loading, setLoading] = useState(false)
+  const [error,     setError]     = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [registered, setRegistered] = useState(false)
+  const [resending,  setResending]  = useState(false)
+  const [resendMsg,  setResendMsg]  = useState('')
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -21,44 +22,90 @@ const Register = () => {
     e.preventDefault()
     setError('')
 
-    // Frontend validation
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword)
       return setError('Passwords do not match')
-    }
-    if (formData.password.length < 8) {
+    if (formData.password.length < 8)
       return setError('Password must be at least 8 characters')
-    }
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password))
       return setError('Password must contain uppercase, lowercase and a number')
-    }
 
     setLoading(true)
     try {
-      await register(formData.name, formData.email, formData.password)
-      navigate('/dashboard')
+      await api.post('/auth/register', {
+        name:     formData.name,
+        email:    formData.email,
+        password: formData.password,
+      })
+      setRegistered(true)
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Try again.')
+      setError(err.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 transition-colors duration-200"
-     style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <div className="w-full max-w-md">
+  const handleResend = async () => {
+    setResending(true)
+    setResendMsg('')
+    try {
+      await api.post('/auth/resend-verification', { email: formData.email })
+      setResendMsg('Verification email resent! Check your inbox.')
+    } catch (err) {
+      setResendMsg(err.response?.data?.message || 'Failed to resend')
+    } finally {
+      setResending(false)
+    }
+  }
 
-        {/* Title */}
+  // Show success screen after register
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">📧</span>
+          </div>
+          <h2 className="text-white text-2xl font-bold mb-2">Check your email!</h2>
+          <p className="text-gray-400 text-sm mb-2">
+            We sent a verification link to
+          </p>
+          <p className="text-white font-medium mb-6">{formData.email}</p>
+          <p className="text-gray-500 text-xs mb-8">
+            Click the link in the email to verify your account.
+            After verifying, you can log in.
+          </p>
+
+          {resendMsg && (
+            <p className="text-green-400 text-sm mb-4">{resendMsg}</p>
+          )}
+
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="text-indigo-400 hover:text-indigo-300 text-sm disabled:opacity-50 transition"
+          >
+            {resending ? 'Sending...' : "Didn't receive it? Resend email"}
+          </button>
+
+          <div className="mt-6">
+            <Link to="/login" className="text-gray-500 hover:text-gray-300 text-sm transition">
+              Back to login
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">DevBoard</h1>
           <p className="text-gray-400 mt-2">Create your account</p>
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl p-8 border transition-colors duration-200"
-     style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-
-          {/* Error */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg px-4 py-3 mb-6">
               {error}
@@ -66,72 +113,39 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Full name
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Full name</label>
               <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Raj Patel"
-                required
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                type="text" name="name" value={formData.name}
+                onChange={handleChange} placeholder="Raj Patel" required
+                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Email address</label>
+              <input
+                type="email" name="email" value={formData.email}
+                onChange={handleChange} placeholder="raj@example.com" required
+                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+              <input
+                type="password" name="password" value={formData.password}
+                onChange={handleChange} placeholder="Min 8 chars, uppercase, number" required
+                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Confirm password</label>
+              <input
+                type="password" name="confirmPassword" value={formData.confirmPassword}
+                onChange={handleChange} placeholder="••••••••" required
+                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="raj@example.com"
-                required
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Min 8 chars, uppercase, number"
-                required
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-              />
-            </div>
-
-            {/* Confirm password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Confirm password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-              />
-            </div>
-
-            {/* Password strength hint */}
             {formData.password && (
               <ul className="text-xs space-y-1">
                 <li className={formData.password.length >= 8 ? 'text-green-400' : 'text-gray-500'}>
@@ -146,25 +160,20 @@ const Register = () => {
               </ul>
             )}
 
-            {/* Submit */}
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-medium rounded-lg px-4 py-3 text-sm transition"
+              type="submit" disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white font-medium rounded-lg px-4 py-3 text-sm transition"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
-
           </form>
 
-          {/* Login link */}
           <p className="text-center text-sm text-gray-400 mt-6">
             Already have an account?{' '}
             <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">
               Sign in
             </Link>
           </p>
-
         </div>
       </div>
     </div>
