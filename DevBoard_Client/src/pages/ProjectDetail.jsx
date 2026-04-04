@@ -29,7 +29,9 @@ const ProjectDetail = () => {
   const allTasks = useMemo(() => tasksData?.data || [], [tasksData])
   const queryClient  = useQueryClient()
   const [showMembers, setShowMembers] = useState(false)
-
+  const handleMembersUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['project', id] })
+  }
   // Client-side filtering (instant, no API call)
   const filteredTasks = useMemo(() => {
     return allTasks.filter((task) => {

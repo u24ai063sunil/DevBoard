@@ -1,21 +1,25 @@
 import { useState } from 'react'
-import { useCreateTask } from '../hooks/useTasks'
+import { useUpdateTask } from '../hooks/useTasks'
 import api from '../api/axios'
 
-const CreateTaskModal = ({ projectId, onClose }) => {
-  const createTask = useCreateTask(projectId)
+const EditTaskModal = ({ task, projectId, onClose }) => {
+  const updateTask = useUpdateTask(projectId)
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    priority: 'medium',
-    status: 'todo',
-    estimatedHours: '',
-    dueDate: '',
+    title:          task.title        || '',
+    description:    task.description  || '',
+    priority:       task.priority     || 'medium',
+    status:         task.status       || 'todo',
+    estimatedHours: task.estimatedHours || '',
+    dueDate:        task.dueDate
+      ? new Date(task.dueDate).toISOString().split('T')[0]
+      : '',
   })
 
   const [assigneeEmail,  setAssigneeEmail]  = useState('')
-  const [assigneeResult, setAssigneeResult] = useState(null)
+  const [assigneeResult, setAssigneeResult] = useState(
+    task.assignee || null
+  )
   const [searchingUser,  setSearchingUser]  = useState(false)
   const [searchError,    setSearchError]    = useState('')
   const [error,          setError]          = useState('')
@@ -32,7 +36,6 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     setSearchingUser(true)
     setSearchError('')
     setAssigneeResult(null)
-
     try {
       const res = await api.get(`/users/search?email=${assigneeEmail.trim()}`)
       setAssigneeResult(res.data.data)
@@ -47,24 +50,21 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     e.preventDefault()
     if (!formData.title.trim()) return setError('Task title is required')
 
-    if (formData.dueDate) {
-      const due   = new Date(formData.dueDate)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (due < today) return setError('Due date cannot be in the past')
-    }
-
     try {
-      const payload = {
-        ...formData,
-        estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
-        dueDate:        formData.dueDate || undefined,
-        assignee:       assigneeResult?._id || undefined,
-      }
-      await createTask.mutateAsync(payload)
+      await updateTask.mutateAsync({
+        id: task._id,
+        data: {
+          ...formData,
+          estimatedHours: formData.estimatedHours
+            ? Number(formData.estimatedHours)
+            : undefined,
+          dueDate:  formData.dueDate || undefined,
+          assignee: assigneeResult?._id || assigneeResult?.id || undefined,
+        },
+      })
       onClose()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create task')
+      setError(err.response?.data?.message || 'Failed to update task')
     }
   }
 
@@ -78,7 +78,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-white font-semibold text-lg">New Task</h2>
+          <h2 className="text-white font-semibold text-lg">Edit Task</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl leading-none">x</button>
         </div>
 
@@ -98,9 +98,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="e.g. Build login page"
-              autoFocus
-              className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
@@ -111,7 +109,6 @@ const CreateTaskModal = ({ projectId, onClose }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Task details..."
               rows={2}
               className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition resize-none"
             />
@@ -149,7 +146,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </div>
           </div>
 
-          {/* Due date + Estimated hours */}
+          {/* Due date + Est hours */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Due date</label>
@@ -176,19 +173,16 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </div>
           </div>
 
-          {/* Assign to user */}
+          {/* Assignee */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Assign to
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Assignee</label>
 
-            {/* Show selected assignee */}
             {assigneeResult ? (
               <div className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center">
                     <span className="text-white text-xs font-medium">
-                      {assigneeResult.name.charAt(0).toUpperCase()}
+                      {assigneeResult.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
@@ -223,10 +217,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
                 </button>
               </div>
             )}
-
-            {searchError && (
-              <p className="text-red-400 text-xs mt-1">{searchError}</p>
-            )}
+            {searchError && <p className="text-red-400 text-xs mt-1">{searchError}</p>}
           </div>
 
           {/* Buttons */}
@@ -240,10 +231,10 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={createTask.isPending}
+              disabled={updateTask.isPending}
               className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white rounded-lg px-4 py-3 text-sm font-medium transition"
             >
-              {createTask.isPending ? 'Creating...' : 'Create task'}
+              {updateTask.isPending ? 'Saving...' : 'Save changes'}
             </button>
           </div>
 
@@ -253,4 +244,4 @@ const CreateTaskModal = ({ projectId, onClose }) => {
   )
 }
 
-export default CreateTaskModal
+export default EditTaskModal

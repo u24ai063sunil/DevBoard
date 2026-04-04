@@ -1,7 +1,8 @@
 import { useUpdateTask, useDeleteTask } from '../hooks/useTasks'
 import { getDueDateStatus, formatDate } from '../utils/dateUtils'
 import TaskAttachments from './TaskAttachments'
-
+import { useState } from 'react'
+import EditTaskModal from './EditTaskModal'
 const statusOptions = ['todo', 'in-progress', 'in-review', 'done']
 
 const priorityColors = {
@@ -33,7 +34,7 @@ const TaskCard = ({ task, projectId }) => {
   const handleStatusChange = async (e) => {
     await updateTask.mutateAsync({ id: task._id, data: { status: e.target.value } })
   }
-
+  const [showEdit, setShowEdit] = useState(false)
   const handleDelete = async (e) => {
     e.stopPropagation()
     if (window.confirm(`Delete "${task.title}"?`)) {
@@ -50,18 +51,29 @@ const TaskCard = ({ task, projectId }) => {
 
       {/* Header */}
       <div className="flex justify-between items-start gap-2 mb-2">
-        <h4 className={`text-sm font-medium flex-1 ${
-          task.status === 'done' ? 'line-through text-gray-500' : 'text-white'
-        }`}>
+        <h4
+          onClick={() => setShowEdit(true)}
+          className={`text-sm font-medium flex-1 cursor-pointer hover:text-indigo-400 transition ${
+            task.status === 'done' ? 'line-through text-gray-500' : 'text-white'
+          }`}
+        >
           {task.title}
         </h4>
-        <button
-          onClick={handleDelete}
-          disabled={deleteTask.isPending}
-          className="text-gray-600 hover:text-red-400 transition text-lg leading-none shrink-0"
-        >
-          ×
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => setShowEdit(true)}
+            className="text-gray-600 hover:text-indigo-400 transition text-xs px-1"
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleteTask.isPending}
+            className="text-gray-600 hover:text-red-400 transition text-lg leading-none"
+          >
+            x
+          </button>
+        </div>
       </div>
 
       {/* Description */}
@@ -120,7 +132,13 @@ const TaskCard = ({ task, projectId }) => {
       <div className="border-t border-gray-800 mt-3 pt-3">
         <TaskAttachments task={task} projectId={projectId} />
       </div>
-
+      {showEdit && (
+        <EditTaskModal
+          task={task}
+          projectId={projectId}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
     </div>
   )
 }
