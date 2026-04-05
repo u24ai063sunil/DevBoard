@@ -23,19 +23,16 @@ const register = catchAsync(async (req, res, next) => {
   const verifyToken = user.createEmailVerificationToken()
   await user.save({ validateBeforeSave: false })
 
-  // Queue verification email
+  // Only send verification email — welcome email comes after verification
   await addVerificationEmailJob({ to: email, name, verifyToken })
-
-  // Queue welcome email
-  await addWelcomeEmailJob({ to: email, name })
 
   res.status(201).json({
     success: true,
     message: 'Account created! Please check your email to verify your account.',
     user: {
-      id:    user._id,
-      name:  user.name,
-      email: user.email,
+      id:         user._id,
+      name:       user.name,
+      email:      user.email,
       isVerified: user.isVerified,
     },
   })
@@ -65,7 +62,6 @@ const verifyEmail = catchAsync(async (req, res, next) => {
 
   if (!token) return next(new AppError('Verification token is required', 400))
 
-  // Hash token to compare with DB
   const hashedToken = crypto
     .createHash('sha256')
     .update(token)
@@ -81,10 +77,13 @@ const verifyEmail = catchAsync(async (req, res, next) => {
   }
 
   // Mark as verified
-  user.isVerified              = true
+  user.isVerified               = true
   user.emailVerificationToken   = undefined
   user.emailVerificationExpires = undefined
   await user.save({ validateBeforeSave: false })
+
+  // NOW send welcome email — user is verified
+  await addWelcomeEmailJob({ to: user.email, name: user.name })
 
   // Redirect to frontend login with success message
   res.redirect('http://localhost:5173/login?verified=true')
