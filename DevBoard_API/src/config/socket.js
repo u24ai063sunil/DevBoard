@@ -4,6 +4,9 @@ const logger = require('../utils/logger')
 
 let io
 
+// Track online users — userId → Set of socketIds
+const onlineUsers = new Map()
+
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
@@ -15,17 +18,14 @@ const initSocket = (httpServer) => {
     },
   })
 
-  // Auth middleware — verify JWT before allowing connection
+  // Auth middleware
   io.use((socket, next) => {
     try {
       const token = socket.handshake.auth.token
-
-      if (!token) {
-        return next(new Error('Authentication required'))
-      }
+      if (!token) return next(new Error('Authentication required'))
 
       const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET)
-      socket.userId = decoded.id  // attach userId to socket
+      socket.userId   = decoded.id
       socket.userRole = decoded.role
       next()
     } catch (err) {
@@ -34,47 +34,78 @@ const initSocket = (httpServer) => {
   })
 
   io.on('connection', (socket) => {
-    logger.info(`Socket connected: ${socket.userId}`)
+    const userId = socket.userId
+    logger.info(`Socket connected: ${userId}`)
 
-    socket.join(`user:${socket.userId}`)
+    // Track online user
+    if (!onlineUsers.has(userId)) {
+      onlineUsers.set(userId, new Set())
+    }
+    onlineUsers.get(userId).add(socket.id)
 
+    // Join personal room
+    socket.join(`user:${userId}`)
+
+    // Broadcast online status to everyone
+    io.emit('user:online', { userId })
+    logger.info(`User online: ${userId} (${onlineUsers.size} total)`)
+
+    // Join project room
     socket.on('join:project', (projectId) => {
       socket.join(`project:${projectId}`)
 
-      // Broadcast to project room that someone joined
-      const room    = io.sockets.adapter.rooms.get(`project:${projectId}`)
-      const count   = room ? room.size : 1
+      const room  = io.sockets.adapter.rooms.get(`project:${projectId}`)
+      const count = room ? room.size : 1
 
-      io.to(`project:${projectId}`).emit('room:members', {
-        projectId,
-        count,
-      })
+      io.to(`project:${projectId}`).emit('room:members', { projectId, count })
     })
 
+    // Leave project room
     socket.on('leave:project', (projectId) => {
       socket.leave(`project:${projectId}`)
 
       const room  = io.sockets.adapter.rooms.get(`project:${projectId}`)
       const count = room ? room.size : 0
 
-      io.to(`project:${projectId}`).emit('room:members', {
-        projectId,
-        count,
-      })
+      io.to(`project:${projectId}`).emit('room:members', { projectId, count })
     })
 
-  socket.on('disconnect', () => {
-    logger.info(`Socket disconnected: ${socket.userId}`)
+    // Get online status of specific users
+    socket.on('presence:check', (userIds) => {
+      const statuses = {}
+      userIds.forEach((id) => {
+        statuses[id] = onlineUsers.has(id) && onlineUsers.get(id).size > 0
+      })
+      socket.emit('presence:status', statuses)
+    })
+
+    // Handle disconnect
+    socket.on('disconnect', () => {
+      const sockets = onlineUsers.get(userId)
+      if (sockets) {
+        sockets.delete(socket.id)
+        if (sockets.size === 0) {
+          onlineUsers.delete(userId)
+          // Broadcast offline status
+          io.emit('user:offline', { userId })
+          logger.info(`User offline: ${userId}`)
+        }
+      }
+    })
   })
-})
 
   return io
 }
 
-// Get io instance anywhere in the app
 const getIO = () => {
   if (!io) throw new Error('Socket.io not initialized')
   return io
 }
 
-module.exports = { initSocket, getIO }
+const isUserOnline = (userId) => {
+  return onlineUsers.has(userId) && onlineUsers.get(userId).size > 0
+}
+
+const getOnlineUsers = () => Array.from(onlineUsers.keys())
+
+module.exports = { initSocket, getIO, isUserOnline, getOnlineUsers }

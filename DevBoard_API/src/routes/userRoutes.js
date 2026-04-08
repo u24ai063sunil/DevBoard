@@ -4,6 +4,7 @@ const { protect } = require('../middlewares/authMiddleware')
 const User = require('../models/User')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/AppError')
+const { isUserOnline, getOnlineUsers } = require('../config/socket')
 
 // GET /api/users/search?email=raj@test.com
 router.get('/search', protect, catchAsync(async (req, res, next) => {
@@ -34,6 +35,17 @@ router.get('/search', protect, catchAsync(async (req, res, next) => {
 router.get('/profile', protect, catchAsync(async (req, res) => {
   const user = await User.findById(req.user.id)
   res.status(200).json({ success: true, data: user })
+}))
+// GET /api/users/online — get list of online user IDs
+router.get('/online', protect, catchAsync(async (req, res) => {
+  const onlineUserIds = getOnlineUsers()
+  res.status(200).json({ success: true, data: onlineUserIds })
+}))
+
+// GET /api/users/online/:userId — check if specific user is online
+router.get('/online/:userId', protect, catchAsync(async (req, res) => {
+  const online = isUserOnline(req.params.userId)
+  res.status(200).json({ success: true, online })
 }))
 
 module.exports = router

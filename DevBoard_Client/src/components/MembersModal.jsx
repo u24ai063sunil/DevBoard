@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import api from '../api/axios'
+import UserAvatar from './UserAvatar'
 
 const roleColors = {
   admin:  'bg-purple-500/10 text-purple-400',
@@ -135,15 +136,7 @@ const MembersModal = ({ project, onClose, onUpdate }) => {
             <div className="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {/* Avatar */}
-                <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 overflow-hidden">
-                  {searchResult.avatar ? (
-                    <img src={searchResult.avatar} alt="" className="w-full h-full object-cover"/>
-                  ) : (
-                    <span className="text-white text-sm font-medium">
-                      {searchResult.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <UserAvatar user={searchResult} size="md" showOnline={true} />
                 <div>
                   <p className="text-white text-sm font-medium">{searchResult.name}</p>
                   <p className="text-gray-400 text-xs">{searchResult.email}</p>
@@ -185,13 +178,7 @@ const MembersModal = ({ project, onClose, onUpdate }) => {
             <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center overflow-hidden shrink-0">
-                  {project.owner.avatar ? (
-                    <img src={project.owner.avatar} alt="" className="w-full h-full object-cover"/>
-                  ) : (
-                    <span className="text-white text-sm font-medium">
-                      {project.owner.name?.charAt(0).toUpperCase()}
-                    </span>
-                  )}
+                  <UserAvatar user={project.owner} size="md" showOnline={true} />
                 </div>
                 <div>
                   <p className="text-white text-sm font-medium">{project.owner.name}</p>
@@ -216,13 +203,7 @@ const MembersModal = ({ project, onClose, onUpdate }) => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden shrink-0">
-                      {member.user.avatar ? (
-                        <img src={member.user.avatar} alt="" className="w-full h-full object-cover"/>
-                      ) : (
-                        <span className="text-white text-sm font-medium">
-                          {member.user.name?.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                      <UserAvatar user={member.user} size="md" showOnline={true} />
                     </div>
                     <div>
                       <p className="text-white text-sm font-medium">{member.user.name}</p>

@@ -3,6 +3,7 @@ import useAuthStore from '../store/authStore'
 import ThemeToggle from './ThemeToggle'
 import NotificationBell from './NotificationBell'
 import { useSocket } from '../socket/useSocket'
+import UserAvatar from './UserAvatar'
 
 const Navbar = () => {
   const { user, logout } = useAuthStore()
@@ -34,15 +35,7 @@ const Navbar = () => {
           <NotificationBell />
 
           <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-indigo-500 flex items-center justify-center shrink-0">
-              {user?.avatar ? (
-                <img src={user.avatar} alt="avatar" className="w-full h-full object-cover"/>
-              ) : (
-                <span className="text-white text-sm font-medium">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+            <UserAvatar user={user} size="sm" showOnline={false} />
             <span className="text-gray-300 text-sm hidden sm:block">{user?.name}</span>
           </Link>
 

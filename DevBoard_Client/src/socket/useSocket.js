@@ -1,15 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { io } from 'socket.io-client'
 import { useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
 import useNotificationStore from '../store/notificationStore'
+import usePresenceStore from '../store/presenceStore'
+import api from '../api/axios'
 
 let socketInstance = null
 
 export const useSocket = () => {
-  const { isAuthenticated }  = useAuthStore()
-  const addNotification      = useNotificationStore((s) => s.addNotification)
-  const queryClient          = useQueryClient()
+  const { isAuthenticated }   = useAuthStore()
+  const addNotification       = useNotificationStore((s) => s.addNotification)
+  const queryClient           = useQueryClient()
+  const { setOnline, setOffline, setMultipleOnline } = usePresenceStore()
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -22,8 +25,26 @@ export const useSocket = () => {
       transports: ['websocket'],
     })
 
-    socketInstance.on('connect', () => {
+    socketInstance.on('connect', async () => {
       console.log('Socket connected:', socketInstance.id)
+
+      // Fetch currently online users on connect
+      try {
+        const res = await api.get('/users/online')
+        setMultipleOnline(res.data.data)
+      } catch (err) {
+        console.error('Failed to fetch online users:', err)
+      }
+    })
+
+    // Someone came online
+    socketInstance.on('user:online', ({ userId }) => {
+      setOnline(userId)
+    })
+
+    // Someone went offline
+    socketInstance.on('user:offline', ({ userId }) => {
+      setOffline(userId)
     })
 
     // Personal notifications
@@ -31,20 +52,13 @@ export const useSocket = () => {
       addNotification(notification)
     })
 
-    // Project room updates — refetch tasks automatically
+    // Project updates
     socketInstance.on('project:update', (update) => {
-      console.log('Live update:', update)
-
-      // Extract projectId from the data
       const projectId = update.data?.projectId
-
       if (projectId) {
-        // Invalidate tasks cache → React Query refetches automatically
         queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
         queryClient.invalidateQueries({ queryKey: ['project', projectId] })
       }
-
-      // Show notification for meaningful events
       if (update.type === 'task:completed') {
         addNotification({
           type:      update.type,
@@ -62,12 +76,7 @@ export const useSocket = () => {
     socketInstance.on('connect_error', (err) => {
       console.error('Socket error:', err.message)
     })
-    // Add to notificationStore or a separate store
-    socketInstance.on('room:members', ({ projectId, count }) => {
-      console.log(`${count} people viewing project ${projectId}`)
-      // Store this in a simple ref or state
-      window.__projectViewers = { ...window.__projectViewers, [projectId]: count }
-    })
+
     return () => {
       if (socketInstance) {
         socketInstance.disconnect()

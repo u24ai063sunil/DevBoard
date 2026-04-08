@@ -10,6 +10,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { getDueDateStatus } from '../utils/dateUtils'
 import { useEffect } from 'react'
 import { joinProjectRoom, leaveProjectRoom, getSocket } from '../socket/useSocket'
+import UserAvatar from '../components/UserAvatar'
+import usePresenceStore from '../store/presenceStore'
+
 const statusColumns = ['todo', 'in-progress', 'in-review', 'done']
 const columnLabels  = { 'todo': 'Todo', 'in-progress': 'In Progress', 'in-review': 'In Review', 'done': 'Done' }
 const columnColors  = { 'todo': 'border-gray-700', 'in-progress': 'border-blue-500/30', 'in-review': 'border-yellow-500/30', 'done': 'border-green-500/30' }
@@ -87,7 +90,14 @@ const ProjectDetail = () => {
     acc[s] = filteredTasks.filter((t) => t.status === s)
     return acc
   }, {})
+  const onlineUsers = usePresenceStore((s) => s.onlineUsers)
 
+  const onlineMembers = project
+    ? [
+        project.owner,
+        ...project.members.map((m) => m.user),
+      ].filter((u) => u && onlineUsers.has(u._id || u))
+    : []
   const doneCount  = allTasks.filter((t) => t.status === 'done').length
   const progress   = allTasks.length ? Math.round((doneCount / allTasks.length) * 100) : 0
   const isFiltered = search || priority || status
@@ -199,6 +209,20 @@ const ProjectDetail = () => {
             </div>
           </div>
         )}
+        {/* Online members */}
+        {onlineMembers.length > 0 && (
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-gray-500 text-xs">Online now:</span>
+            <div className="flex items-center gap-2">
+              {onlineMembers.map((member) => (
+                <div key={member._id} className="flex items-center gap-1.5">
+                  <UserAvatar user={member} size="sm" showOnline={true} />
+                  <span className="text-gray-400 text-xs">{member.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Overdue alert banner */}
         {(overdueCount > 0 || dueTodayCount > 0) && (
           <div className="flex gap-3 mb-6 flex-wrap">
@@ -242,13 +266,13 @@ const ProjectDetail = () => {
             >
               Add task
             </button>
-            {showMembers && project && (
+            {/* {showMembers && project && (
               <MembersModal
                 project={project}
                 onClose={() => setShowMembers(false)}
                 onUpdate={handleMembersUpdate}
               />
-            )}
+            )} */}
           </div>
         )}
 
@@ -290,7 +314,13 @@ const ProjectDetail = () => {
         )}
 
       </main>
-
+        {showMembers && project && (
+        <MembersModal
+          project={project}
+          onClose={() => setShowMembers(false)}
+          onUpdate={handleMembersUpdate}
+        />
+      )}
       {showModal && <CreateTaskModal projectId={id} onClose={() => setShowModal(false)} />}
     </div>
   )
