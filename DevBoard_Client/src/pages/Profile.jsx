@@ -98,12 +98,21 @@ const Profile = () => {
       <main className="max-w-2xl mx-auto px-6 py-8">
 
         {/* Back */}
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="text-gray-400 hover:text-white text-sm mb-6 flex items-center gap-2 transition"
-        >
-          ← Back to dashboard
-        </button>
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="text-gray-400 hover:text-white text-sm flex items-center gap-2 transition"
+          >
+            ← Back to dashboard
+          </button>
+          <span className="text-gray-700">|</span>
+          <button
+            onClick={() => navigate('/analytics')}
+            className="text-indigo-400 hover:text-indigo-300 text-sm transition"
+          >
+            View Analytics
+          </button>
+        </div>
 
         <h1 className="text-2xl font-bold text-white mb-8">My Profile</h1>
 
@@ -115,7 +124,7 @@ const Profile = () => {
 
             {/* Avatar preview */}
             <div className="relative">
-              <div className="w-24 h-24 rounded-2xl overflow-hidden bg-indigo-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-24 h-24 rounded-2xl overflow-hidden bg-indigo-600 flex items-center justify-center shrink-0">
                 {user?.avatar ? (
                   <img
                     src={user.avatar}

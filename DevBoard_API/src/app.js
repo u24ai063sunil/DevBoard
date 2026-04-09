@@ -13,6 +13,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const userRoutes = require('./routes/userRoutes')
+const analyticsRoutes = require('./routes/analyticsRoutes')
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/projects/:projectId/tasks', taskRoutes); // nested route
 app.use('/api/users', userRoutes)
 // ── 404 handler ───────────────────────────────────────────────────
 app.use('/api', uploadRoutes);
+app.use('/api/analytics', analyticsRoutes)
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });

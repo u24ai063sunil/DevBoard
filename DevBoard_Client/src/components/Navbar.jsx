@@ -30,7 +30,12 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-
+          <Link
+            to="/analytics"
+            className="text-gray-400 hover:text-white text-sm transition hidden sm:block"
+          >
+            Analytics
+          </Link>
           {/* Notification bell */}
           <NotificationBell />
 
