@@ -53,19 +53,21 @@ const getAllTasks = catchAsync(async (req, res) => {
 
 // GET /api/projects/:projectId/tasks/:id
 const getTask = catchAsync(async (req, res, next) => {
-  await checkProjectAccess(req.params.projectId, req.user.id);
+  await checkProjectAccess(req.params.projectId, req.user.id)
 
   const task = await Task.findOne({
-    _id: req.params.id,
-    project: req.params.projectId, // ensures task belongs to this project
+    _id:     req.params.id,
+    project: req.params.projectId,
   })
-    .populate('assignee', 'name email avatar')
-    .populate('createdBy', 'name email');
+    .populate('assignee',       'name email avatar')
+    .populate('createdBy',      'name email')
+    .populate('comments.user',  'name email avatar _id')  // ← add this
+    .populate('activity.user',  'name email avatar')      // ← add this
 
-  if (!task) throw new AppError('Task not found', 404);
+  if (!task) return next(new AppError('Task not found', 404))
 
-  res.status(200).json({ success: true, data: task });
-});
+  res.status(200).json({ success: true, data: task })
+})
 
 // POST /api/projects/:projectId/tasks
 const createTask = catchAsync(async (req, res, next) => {
@@ -125,6 +127,18 @@ const updateTask = catchAsync(async (req, res, next) => {
   const oldTask = await Task.findById(req.params.id)
   if (!oldTask) return next(new AppError('Task not found', 404))
 
+  // Log what changed
+  const activityLogs = []
+  if (req.body.status && req.body.status !== oldTask.status) {
+    activityLogs.push({ action: 'changed status', field: 'status', oldValue: oldTask.status, newValue: req.body.status })
+  }
+  if (req.body.priority && req.body.priority !== oldTask.priority) {
+    activityLogs.push({ action: 'changed priority', field: 'priority', oldValue: oldTask.priority, newValue: req.body.priority })
+  }
+  if (req.body.assignee && req.body.assignee !== oldTask.assignee?.toString()) {
+    activityLogs.push({ action: 'changed assignee', field: 'assignee', oldValue: oldTask.assignee, newValue: req.body.assignee })
+  }
+
   const task = await Task.findOneAndUpdate(
     { _id: req.params.id, project: req.params.projectId },
     req.body,
@@ -135,17 +149,20 @@ const updateTask = catchAsync(async (req, res, next) => {
 
   if (!task) return next(new AppError('Task not found', 404))
 
+  // Add activity logs
+  activityLogs.forEach(({ action, field, oldValue, newValue }) => {
+    logActivity(task, req.user.id, action, field, oldValue, newValue)
+  })
+  await task.save()
+
   // Notify assignee if changed
   const assigneeChanged = req.body.assignee &&
     req.body.assignee !== oldTask.assignee?.toString()
 
   if (assigneeChanged && task.assignee) {
     const isAssigningToSelf = task.assignee._id.toString() === req.user.id
-
     if (!isAssigningToSelf) {
       const project = await Project.findById(req.params.projectId)
-
-      // Real-time
       notifyUser(task.assignee._id.toString(), NOTIFICATION_TYPES.TASK_ASSIGNED, {
         taskId:      task._id,
         taskTitle:   task.title,
@@ -153,8 +170,6 @@ const updateTask = catchAsync(async (req, res, next) => {
         projectName: project.name,
         message:     `You were assigned "${task.title}" in ${project.name}`,
       })
-
-      // Email
       try {
         await addTaskAssignedEmailJob({
           to:           task.assignee.email,
@@ -168,7 +183,6 @@ const updateTask = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Notify if task marked as done
   if (req.body.status === 'done' && oldTask.status !== 'done') {
     notifyProject(req.params.projectId, NOTIFICATION_TYPES.TASK_COMPLETED, {
       taskId:    task._id,
@@ -178,11 +192,11 @@ const updateTask = catchAsync(async (req, res, next) => {
     })
   }
 
-  // Notify project room of any update
   notifyProject(req.params.projectId, NOTIFICATION_TYPES.TASK_UPDATED, {
     action:    'updated',
     taskId:    task._id,
     taskTitle: task.title,
+    projectId: req.params.projectId,
   })
 
   res.status(200).json({ success: true, data: task })
@@ -201,5 +215,17 @@ const deleteTask = catchAsync(async (req, res, next) => {
 
   res.status(200).json({ success: true, message: 'Task deleted successfully' });
 });
-
-module.exports = { getAllTasks, getTask, createTask, updateTask, deleteTask };
+// Helper to log activity
+const logActivity = (task, userId, action, field, oldValue, newValue) => {
+  task.activity.unshift({
+    user:     userId,
+    action,
+    field,
+    oldValue: oldValue?.toString(),
+    newValue: newValue?.toString(),
+    createdAt: new Date(),
+  })
+  // Keep only last 20 activities
+  if (task.activity.length > 20) task.activity = task.activity.slice(0, 20)
+}
+module.exports = { getAllTasks, getTask, createTask, updateTask, deleteTask, logActivity };

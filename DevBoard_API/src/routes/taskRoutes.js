@@ -1,4 +1,7 @@
 const express = require('express');
+const Task        = require('../models/Task')
+const AppError    = require('../utils/AppError')
+const catchAsync  = require('../utils/catchAsync')
 const router = express.Router({ mergeParams: true });
 const {
   getAllTasks, getTask, createTask, updateTask, deleteTask,
@@ -138,5 +141,47 @@ router.route('/').get(getAllTasks).post(createTask);
  *         description: Task deleted
  */
 router.route('/:id').get(getTask).patch(updateTask).delete(deleteTask);
+// Add these routes at the bottom
+router.post('/:id/comments', catchAsync(async (req, res, next) => {
+  const { text } = req.body
+  if (!text?.trim()) return next(new AppError('Comment text is required', 400))
 
+  await Task.findOneAndUpdate(
+    { _id: req.params.id, project: req.params.projectId },
+    {
+      $push: {
+        comments: {
+          $each: [{ user: req.user.id, text: text.trim() }],
+          $position: 0,
+        },
+      },
+    }
+  )
+
+  // Fetch fresh task with populated comments
+  const task = await Task.findById(req.params.id)
+    .populate('comments.user', 'name email avatar _id')
+
+  if (!task) return next(new AppError('Task not found', 404))
+
+  const { notifyProject } = require('../utils/notify')
+  notifyProject(req.params.projectId, 'task:commented', {
+    taskId:    task._id,
+    taskTitle: task.title,
+    projectId: req.params.projectId,
+    by:        req.user.name,
+  })
+
+  res.status(201).json({ success: true, data: task.comments[0] })
+}))
+
+router.delete('/:id/comments/:commentId', catchAsync(async (req, res, next) => {
+  const task = await Task.findOneAndUpdate(
+    { _id: req.params.id, project: req.params.projectId },
+    { $pull: { comments: { _id: req.params.commentId } } },
+    { new: true }
+  )
+  if (!task) return next(new AppError('Task not found', 404))
+  res.status(200).json({ success: true, message: 'Comment deleted' })
+}))
 module.exports = router;

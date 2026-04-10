@@ -12,9 +12,16 @@ const useAuthStore = create(
       login: async (email, password) => {
         const res = await api.post('/auth/login', { email, password })
         localStorage.setItem('accessToken', res.data.accessToken)
+
+        const userData = {
+          ...res.data.user,
+          id:  res.data.user._id || res.data.user.id,
+          _id: res.data.user._id || res.data.user.id,
+        }
+
         set({
-          user: res.data.user,
-          token: res.data.accessToken,
+          user:            userData,
+          token:           res.data.accessToken,
           isAuthenticated: true,
         })
         return res.data
@@ -23,9 +30,16 @@ const useAuthStore = create(
       register: async (name, email, password) => {
         const res = await api.post('/auth/register', { name, email, password })
         localStorage.setItem('accessToken', res.data.accessToken)
+
+        const userData = {
+          ...res.data.user,
+          id:  res.data.user._id || res.data.user.id,
+          _id: res.data.user._id || res.data.user.id,
+        }
+
         set({
-          user: res.data.user,
-          token: res.data.accessToken,
+          user:            userData,
+          token:           res.data.accessToken,
           isAuthenticated: true,
         })
         return res.data

@@ -3,6 +3,7 @@ import { getDueDateStatus, formatDate } from '../utils/dateUtils'
 import TaskAttachments from './TaskAttachments'
 import { useEffect, useRef, useState } from 'react'
 import EditTaskModal from './EditTaskModal'
+import TaskDetailModal from './TaskDetailModal'
 const statusOptions = ['todo', 'in-progress', 'in-review', 'done']
 
 const priorityColors = {
@@ -51,13 +52,8 @@ const TaskCard = ({ task, projectId }) => {
       await deleteTask.mutateAsync(task._id)
     }
   }
-
+  const [showDetail, setShowDetail] = useState(false)
   return (
-    // <div className={`bg-gray-900 border rounded-xl p-4 transition ${
-    //   dueDateStatus?.type === 'overdue'
-    //     ? 'border-red-500/30 hover:border-red-500/50'
-    //     : 'border-gray-800 hover:border-gray-700'
-    // }`}>
     <div className={`border rounded-xl p-4 transition-all duration-300 ${
         justUpdated
           ? 'bg-indigo-500/10 border-indigo-500/30'
@@ -69,7 +65,7 @@ const TaskCard = ({ task, projectId }) => {
       {/* Header */}
       <div className="flex justify-between items-start gap-2 mb-2">
         <h4
-          onClick={() => setShowEdit(true)}
+          onClick={() => setShowDetail(true)}
           className={`text-sm font-medium flex-1 cursor-pointer hover:text-indigo-400 transition ${
             task.status === 'done' ? 'line-through text-gray-500' : 'text-white'
           }`}
@@ -154,6 +150,13 @@ const TaskCard = ({ task, projectId }) => {
           task={task}
           projectId={projectId}
           onClose={() => setShowEdit(false)}
+        />
+      )}
+      {showDetail && (
+        <TaskDetailModal
+          taskId={task._id}
+          projectId={projectId}
+          onClose={() => setShowDetail(false)}
         />
       )}
     </div>

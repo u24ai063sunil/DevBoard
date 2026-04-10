@@ -61,3 +61,13 @@ export const useDeleteTask = (projectId) => {
     },
   })
 }
+export const useTaskDetail = (projectId, taskId) => {
+  return useQuery({
+    queryKey: ['task', projectId, taskId],
+    queryFn: async () => {
+      const res = await api.get(`/projects/${projectId}/tasks/${taskId}`)
+      return res.data
+    },
+    enabled: !!projectId && !!taskId,
+  })
+}
