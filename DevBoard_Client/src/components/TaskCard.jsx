@@ -4,6 +4,8 @@ import TaskAttachments from './TaskAttachments'
 import { useEffect, useRef, useState } from 'react'
 import EditTaskModal from './EditTaskModal'
 import TaskDetailModal from './TaskDetailModal'
+import { CATEGORY_COLORS } from '../utils/labelColors'
+
 const statusOptions = ['todo', 'in-progress', 'in-review', 'done']
 
 const priorityColors = {
@@ -110,7 +112,35 @@ const TaskCard = ({ task, projectId }) => {
           </span>
         )}
       </div>
+      {/* Category badge */}
+      {task.category && task.category !== 'other' && (
+        <span className={`text-xs px-2 py-1 rounded-full capitalize ${
+          CATEGORY_COLORS[task.category]?.bg || 'bg-gray-500/10'
+        } ${
+          CATEGORY_COLORS[task.category]?.text || 'text-gray-400'
+        }`}>
+          {task.category}
+        </span>
+      )}
 
+      {/* Labels */}
+      {task.labels && task.labels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {task.labels.map((label) => (
+            <span
+              key={label.name}
+              className="text-xs px-2 py-0.5 rounded-full"
+              style={{
+                backgroundColor: label.color + '22',
+                border:          `1px solid ${label.color}55`,
+                color:           label.color,
+              }}
+            >
+              {label.name}
+            </span>
+          ))}
+        </div>
+      )}
       {/* Due date alert */}
       {dueDateStatus && (
         <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg mb-3 w-fit ${dueDateColors[dueDateStatus.type]}`}>

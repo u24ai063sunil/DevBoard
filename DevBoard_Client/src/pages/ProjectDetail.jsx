@@ -64,7 +64,7 @@ const ProjectDetail = () => {
   const [search,    setSearch]    = useState('')
   const [priority,  setPriority]  = useState('')
   const [status,    setStatus]    = useState('')
-
+  const [label, setLabel] = useState('')
   const { data: projectData, isLoading: projectLoading } = useProject(id)
   const { data: tasksData,   isLoading: tasksLoading   } = useTasks(id)
 
@@ -81,9 +81,12 @@ const ProjectDetail = () => {
       const matchSearch   = !search   || task.title.toLowerCase().includes(search.toLowerCase()) || task.description?.toLowerCase().includes(search.toLowerCase())
       const matchPriority = !priority || task.priority === priority
       const matchStatus   = !status   || task.status === status
-      return matchSearch && matchPriority && matchStatus
+      const matchLabel    = !label    || task.labels?.some((l) =>
+        l.name.toLowerCase().includes(label.toLowerCase())
+      )
+      return matchSearch && matchPriority && matchStatus && matchLabel
     })
-  }, [allTasks, search, priority, status])
+  }, [allTasks, search, priority, status, label])
 
   // Group filtered tasks by status for kanban
   const tasksByStatus = statusColumns.reduce((acc, s) => {
@@ -250,6 +253,7 @@ const ProjectDetail = () => {
           search={search}     setSearch={setSearch}
           priority={priority} setPriority={setPriority}
           status={status}     setStatus={setStatus}
+          label={label}       setLabel={setLabel}
         />
 
         {/* Empty state */}

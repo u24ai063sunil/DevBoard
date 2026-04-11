@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useUpdateTask } from '../hooks/useTasks'
 import api from '../api/axios'
+import LabelPicker from './LabelPicker'
 
 const EditTaskModal = ({ task, projectId, onClose }) => {
   const updateTask = useUpdateTask(projectId)
-
+  const [labels,   setLabels]   = useState(task.labels   || [])
+  const [category, setCategory] = useState(task.category || 'other')
   const [formData, setFormData] = useState({
     title:          task.title        || '',
     description:    task.description  || '',
@@ -55,11 +57,11 @@ const EditTaskModal = ({ task, projectId, onClose }) => {
         id: task._id,
         data: {
           ...formData,
-          estimatedHours: formData.estimatedHours
-            ? Number(formData.estimatedHours)
-            : undefined,
-          dueDate:  formData.dueDate || undefined,
-          assignee: assigneeResult?._id || assigneeResult?.id || undefined,
+          estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
+          dueDate:        formData.dueDate || undefined,
+          assignee:       assigneeResult?._id || assigneeResult?.id || undefined,
+          labels,
+          category,
         },
       })
       onClose()
@@ -172,7 +174,22 @@ const EditTaskModal = ({ task, projectId, onClose }) => {
               />
             </div>
           </div>
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+            >
+              {['feature','bug','improvement','documentation','testing','design','other'].map((c) => (
+                <option key={c} value={c} className="capitalize">{c}</option>
+              ))}
+            </select>
+          </div>
 
+          {/* Labels */}
+          <LabelPicker selectedLabels={labels} onChange={setLabels} />
           {/* Assignee */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Assignee</label>

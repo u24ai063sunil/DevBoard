@@ -44,7 +44,19 @@ const taskSchema = new mongoose.Schema(
       type: Number,
       min: [0, 'Estimated hours cannot be negative'],
     },
-    tags: [String],
+    // tags: [String],
+    // Replace the existing tags field
+    labels: [
+      {
+        name:  { type: String, required: true, maxlength: 30 },
+        color: { type: String, default: '#6366f1' },
+      },
+    ],
+    category: {
+      type: String,
+      enum: ['feature', 'bug', 'improvement', 'documentation', 'testing', 'design', 'other'],
+      default: 'other',
+    },
     attachments: [
       {
         filename: String,

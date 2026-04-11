@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useCreateTask } from '../hooks/useTasks'
 import api from '../api/axios'
+import LabelPicker from './LabelPicker'
 
 const CreateTaskModal = ({ projectId, onClose }) => {
   const createTask = useCreateTask(projectId)
-
+  const [labels,   setLabels]   = useState([])
+  const [category, setCategory] = useState('other')
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -60,6 +62,8 @@ const CreateTaskModal = ({ projectId, onClose }) => {
         estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
         dueDate:        formData.dueDate || undefined,
         assignee:       assigneeResult?._id || undefined,
+        labels,
+        category,
       }
       await createTask.mutateAsync(payload)
       onClose()
@@ -175,7 +179,22 @@ const CreateTaskModal = ({ projectId, onClose }) => {
               />
             </div>
           </div>
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+            >
+              {['feature','bug','improvement','documentation','testing','design','other'].map((c) => (
+                <option key={c} value={c} className="capitalize">{c}</option>
+              ))}
+            </select>
+          </div>
 
+          {/* Labels */}
+          <LabelPicker selectedLabels={labels} onChange={setLabels} />
           {/* Assign to user */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
