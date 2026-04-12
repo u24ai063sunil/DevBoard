@@ -1,18 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../api/axios'
+import { showSuccess, showError } from '../utils/toast'
 
-// Fetch all projects
 export const useProjects = () => {
   return useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
+    queryFn:  async () => {
       const res = await api.get('/projects')
       return res.data
     },
   })
 }
 
-// Create project
 export const useCreateProject = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -20,14 +19,16 @@ export const useCreateProject = () => {
       const res = await api.post('/projects', data)
       return res.data
     },
-    onSuccess: () => {
-      // Refetch projects list after creating
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
+      showSuccess(`Project "${data.data.name}" created!`)
+    },
+    onError: (err) => {
+      showError(err.response?.data?.message || 'Failed to create project')
     },
   })
 }
 
-// Delete project
 export const useDeleteProject = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -37,11 +38,14 @@ export const useDeleteProject = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
+      showSuccess('Project deleted')
+    },
+    onError: (err) => {
+      showError(err.response?.data?.message || 'Failed to delete project')
     },
   })
 }
 
-// Update project
 export const useUpdateProject = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -51,6 +55,10 @@ export const useUpdateProject = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
+      showSuccess('Project updated!')
+    },
+    onError: (err) => {
+      showError(err.response?.data?.message || 'Failed to update project')
     },
   })
 }

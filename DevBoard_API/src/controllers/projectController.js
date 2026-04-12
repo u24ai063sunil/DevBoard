@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const ApiFeatures = require('../utils/ApiFeatures');
+const { setCache, getCache, deletePattern } = require('../utils/cache')
 
 // GET /api/projects
 const getAllProjects = catchAsync(async (req, res) => {
@@ -161,21 +162,36 @@ const removeMember = catchAsync(async (req, res, next) => {
     return next(new AppError('Only the owner can remove members', 403))
   }
 
-  // Cannot remove owner
+  // Cannot remove the owner
   if (req.params.userId === project.owner.toString()) {
     return next(new AppError('Cannot remove the project owner', 400))
   }
 
-  // $pull removes matching element from array
-  project.members = project.members.filter(
-    (m) => m.user.toString() !== req.params.userId
+  // Check member actually exists
+  const memberExists = project.members.some(
+    (m) => m.user.toString() === req.params.userId
   )
-  await project.save()
+  if (!memberExists) {
+    return next(new AppError('User is not a member of this project', 404))
+  }
 
+  // Use $pull operator — safer than filter + save
+  await Project.findByIdAndUpdate(
+    req.params.id,
+    {
+      $pull: { members: { user: req.params.userId } }
+    },
+    { new: true }
+  )
+
+  // Invalidate cache
   await deletePattern(`projects:${req.user.id}:*`)
 
-  res.status(200).json({ success: true, data: project })
-})
+  res.status(200).json({
+    success: true,
+    message: 'Member removed successfully',
+  })
+});
 
 module.exports = {
   getAllProjects, getProject, createProject,

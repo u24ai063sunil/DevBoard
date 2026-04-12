@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import EditTaskModal from './EditTaskModal'
 import TaskDetailModal from './TaskDetailModal'
 import { CATEGORY_COLORS } from '../utils/labelColors'
+import { showSuccess, showError, toast } from '../utils/toast'
 
 const statusOptions = ['todo', 'in-progress', 'in-review', 'done']
 
@@ -50,9 +51,28 @@ const TaskCard = ({ task, projectId, isDragging = false}) => {
   const [showEdit, setShowEdit] = useState(false)
   const handleDelete = async (e) => {
     e.stopPropagation()
-    if (window.confirm(`Delete "${task.title}"?`)) {
-      await deleteTask.mutateAsync(task._id)
-    }
+
+    // Custom confirm toast
+    toast((t) => (
+      <div className="flex items-center gap-3">
+        <span className="text-sm">Delete "{task.title}"?</span>
+        <button
+          onClick={async () => {
+            toast.dismiss(t.id)
+            await deleteTask.mutateAsync(task._id)
+          }}
+          className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-lg transition"
+        >
+          Delete
+        </button>
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded-lg transition"
+        >
+          Cancel
+        </button>
+      </div>
+    ), { duration: 5000 })
   }
   const [showDetail, setShowDetail] = useState(false)
   return (

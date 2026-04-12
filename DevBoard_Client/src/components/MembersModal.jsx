@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import api from '../api/axios'
 import UserAvatar from './UserAvatar'
+import { showSuccess, showError } from '../utils/toast'
 
 const roleColors = {
   admin:  'bg-purple-500/10 text-purple-400',
@@ -44,12 +45,12 @@ const MembersModal = ({ project, onClose, onUpdate }) => {
         userId: searchResult._id,
         role,
       })
-      setSuccessMsg(`${searchResult.name} added as ${role}!`)
+      showSuccess(`${searchResult.name} added as ${role}!`)
       setSearchResult(null)
       setEmail('')
       onUpdate()
     } catch (err) {
-      setSearchError(err.response?.data?.message || 'Failed to add member')
+      showError(err.response?.data?.message || 'Failed to add member')
     } finally {
       setAdding(false)
     }
@@ -60,10 +61,10 @@ const MembersModal = ({ project, onClose, onUpdate }) => {
     setRemovingId(userId)
     try {
       await api.delete(`/projects/${project._id}/members/${userId}`)
-      setSuccessMsg(`${userName} removed from project`)
+      showSuccess(`${userName} removed from project`)
       onUpdate()
     } catch (err) {
-      setSearchError(err.response?.data?.message || 'Failed to remove member')
+      showError(err.response?.data?.message || 'Failed to remove member')
     } finally {
       setRemovingId(null)
     }

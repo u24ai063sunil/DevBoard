@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar'
 import useAuthStore from '../store/authStore'
 import { updateAvatar } from '../api/profile'
 import api from '../api/axios'
+import { toast, showSuccess, showError } from '../utils/toast'
 
 const Profile = () => {
   const navigate               = useNavigate()
@@ -29,31 +30,28 @@ const Profile = () => {
     const file = e.target.files[0]
     if (!file) return
 
-    // Validate file type
     if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-      return setAvatarError('Only JPG and PNG images are allowed')
+      return showError('Only JPG and PNG images are allowed')
     }
-
-    // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      return setAvatarError('Image must be under 2MB')
+      return showError('Image must be under 2MB')
     }
 
+    const toastId = toast.loading('Uploading avatar...')
     setAvatarLoading(true)
-    setAvatarError('')
-    setAvatarSuccess('')
 
     try {
       const res = await updateAvatar(file)
-      updateUser({ avatar: res.avatar }) // update store instantly
-      setAvatarSuccess('Avatar updated successfully!')
+      updateUser({ avatar: res.avatar })
+      toast.dismiss(toastId)
+      showSuccess('Avatar updated!')
     } catch (err) {
-      setAvatarError(err.response?.data?.message || 'Failed to upload avatar')
+      toast.dismiss(toastId)
+      showError(err.response?.data?.message || 'Failed to upload avatar')
     } finally {
       setAvatarLoading(false)
     }
   }
-
   // ── Password change ─────────────────────────────────────────────
   const handlePwChange = (e) => {
     setPwData({ ...pwData, [e.target.name]: e.target.value })
@@ -83,9 +81,11 @@ const Profile = () => {
         newPassword: pwData.newPassword,
       })
       setPwSuccess('Password changed successfully!')
+      showSuccess('Password changed successfully!')
       setPwData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
       setPwError(err.response?.data?.message || 'Failed to change password')
+      showError('Failed to change password')
     } finally {
       setPwLoading(false)
     }

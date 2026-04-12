@@ -5,6 +5,7 @@ import UserAvatar from './UserAvatar'
 import api from '../api/axios'
 import useAuthStore from '../store/authStore'
 import { formatDate } from '../utils/dateUtils'
+import { showSuccess, showError } from '../utils/toast'
 
 const activityIcons = {
   'changed status':   '↔',
@@ -43,6 +44,7 @@ const TaskDetailModal = ({ taskId, projectId, onClose }) => {
       setComment('')
       queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] })
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
+      showSuccess('Comment added!')
     } catch (err) {
       console.error('Comment error:', err)
     } finally {
@@ -55,6 +57,7 @@ const TaskDetailModal = ({ taskId, projectId, onClose }) => {
     try {
       await api.delete(`/projects/${projectId}/tasks/${taskId}/comments/${commentId}`)
       queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] })
+      showSuccess('Comment deleted')
     } catch (err) {
       console.error('Delete comment error:', err)
     }

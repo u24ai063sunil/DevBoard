@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useDeleteProject } from '../hooks/useProjects'
+import { showSuccess, showError } from '../utils/toast'
 
 const statusColors = {
   active:    'bg-green-500/10 text-green-400 border-green-500/20',
@@ -19,9 +20,16 @@ const ProjectCard = ({ project }) => {
   const deleteProject = useDeleteProject()
 
   const handleDelete = async (e) => {
-    e.stopPropagation() // prevent card click
-    if (window.confirm(`Delete "${project.name}"? This will delete all tasks too.`)) {
+    e.stopPropagation()
+    // Replace window.confirm with toast confirmation
+    const confirmed = window.confirm(`Delete "${project.name}"? This will delete all tasks too.`)
+    if (!confirmed) return
+
+    try {
       await deleteProject.mutateAsync(project._id)
+      // Toast handled by useDeleteProject onSuccess
+    } catch (err) {
+      showError('Failed to delete project')
     }
   }
 

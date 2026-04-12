@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import UserAvatar from '../components/UserAvatar'
 import useAuthStore from '../store/authStore'
+import { showSuccess, showError } from '../utils/toast'
+
 import {
   getAdminStats, getAdminUsers, getAdminProjects,
   banUser, unbanUser, changeUserRole, deleteUser,
@@ -33,12 +35,44 @@ const AdminDashboard = () => {
   const { data: usersData } = useQuery({ queryKey: ['admin-users', userPage, userSearch],   queryFn: () => getAdminUsers({ page: userPage, limit: 10, search: userSearch }), keepPreviousData: true })
   const { data: projData }  = useQuery({ queryKey: ['admin-projects', projPage],            queryFn: () => getAdminProjects({ page: projPage, limit: 10 }), keepPreviousData: true })
 
-  // Mutations
-  const banMutation    = useMutation({ mutationFn: banUser,        onSuccess: (d) => { setActionMsg(d.message); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) } })
-  const unbanMutation  = useMutation({ mutationFn: unbanUser,      onSuccess: (d) => { setActionMsg(d.message); queryClient.invalidateQueries({ queryKey: ['admin-users'] }) } })
-  const roleMutation   = useMutation({ mutationFn: ({ id, role }) => changeUserRole(id, role), onSuccess: (d) => { setActionMsg(d.message); queryClient.invalidateQueries({ queryKey: ['admin-users'] }) } })
-  const deleteMutation = useMutation({ mutationFn: deleteUser,     onSuccess: (d) => { setActionMsg(d.message); queryClient.invalidateQueries({ queryKey: ['admin-users'] }); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) } })
+  // Update mutations:
+  const banMutation = useMutation({
+    mutationFn: banUser,
+    onSuccess: (d) => {
+      showSuccess(d.message)
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+    },
+    onError: (err) => showError(err.response?.data?.message || 'Failed to ban user'),
+  })
 
+  const unbanMutation = useMutation({
+    mutationFn: unbanUser,
+    onSuccess: (d) => {
+      showSuccess(d.message)
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err) => showError(err.response?.data?.message || 'Failed to unban user'),
+  })
+
+  const roleMutation = useMutation({
+    mutationFn: ({ id, role }) => changeUserRole(id, role),
+    onSuccess: (d) => {
+      showSuccess(d.message)
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err) => showError(err.response?.data?.message || 'Failed to change role'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: (d) => {
+      showSuccess(d.message)
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+    },
+    onError: (err) => showError(err.response?.data?.message || 'Failed to delete user'),
+  })
   const handleBan = (u) => {
     if (!window.confirm(`Ban ${u.name}? They won't be able to login.`)) return
     banMutation.mutate(u._id)
