@@ -9,6 +9,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword  from './pages/ResetPassword'
 import Analytics from './pages/Analytics'
 import AuthCallback from './pages/AuthCallback'
+import AdminDashboard from './pages/AdminDashboard'
 
 function App() {
   return (
@@ -29,6 +30,9 @@ function App() {
         }/>
         <Route path="/analytics" element={
           <ProtectedRoute><Analytics /></ProtectedRoute>
+        }/>
+        <Route path="/admin" element={
+          <ProtectedRoute><AdminDashboard /></ProtectedRoute>
         }/>
         <Route path="/"  element={<Navigate to="/dashboard" replace />} />
         <Route path="*"  element={<Navigate to="/login" replace />} />

@@ -53,6 +53,10 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    isBanned: { type: Boolean, default: false },
+    bannedAt: { type: Date },
+    bannedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    welcomeEmailSent: { type: Boolean, default: false },
   },
   {
     timestamps: true, // auto-adds createdAt and updatedAt fields

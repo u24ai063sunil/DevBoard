@@ -17,6 +17,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes')
 const session       = require('express-session')
 const passport      = require('./config/passport')
 const googleAuthRoutes = require('./routes/googleAuthRoutes')
+const adminRoutes = require('./routes/adminRoutes')
 
 const app = express();
 
@@ -74,8 +75,10 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/tasks', taskRoutes); // nested route
 app.use('/api/users', userRoutes)
 // ── 404 handler ───────────────────────────────────────────────────
+
 app.use('/api', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/admin', adminRoutes)
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });

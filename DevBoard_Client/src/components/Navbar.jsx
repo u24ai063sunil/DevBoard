@@ -38,7 +38,14 @@ const Navbar = () => {
           </Link>
           {/* Notification bell */}
           <NotificationBell />
-
+          {user?.role === 'admin' && (
+            <Link
+              to="/admin"
+              className="text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition"
+            >
+              Admin
+            </Link>
+          )}
           <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition">
             <UserAvatar user={user} size="sm" showOnline={false} />
             <span className="text-gray-300 text-sm hidden sm:block">{user?.name}</span>

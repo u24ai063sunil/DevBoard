@@ -67,7 +67,10 @@ const login = catchAsync(async (req, res, next) => {
   if (!user.isVerified) {
     return next(new AppError('Please verify your email before logging in.', 401))
   }
-
+  // Block banned users
+  if (user.isBanned) {
+    return next(new AppError('Your account has been suspended. Contact support.', 403))
+  }
   sendTokens(res, user, 200)
 })
 
