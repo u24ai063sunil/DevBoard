@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import UserAvatar from '../components/UserAvatar'
 import useAuthStore from '../store/authStore'
 import { showSuccess, showError } from '../utils/toast'
+import { exportUsersToCSV, exportProjectsToCSV } from '../utils/exportUtils'
 
 import {
   getAdminStats, getAdminUsers, getAdminProjects,
@@ -167,7 +168,7 @@ const AdminDashboard = () => {
         {activeTab === 'users' && (
           <div>
             {/* Search */}
-            <div className="mb-4">
+            <div className="flex justify-between items-center mb-4">
               <input
                 type="text"
                 value={userSearch}
@@ -175,6 +176,21 @@ const AdminDashboard = () => {
                 placeholder="Search by name or email..."
                 className="w-full max-w-md bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition"
               />
+              <button
+                onClick={() => {
+                  const success = exportUsersToCSV(usersData?.data)
+                  if (success) showSuccess('Users exported to CSV!')
+                  else showError('No users to export')
+                }}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2 ml-3 flex-shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export
+              </button>
             </div>
 
             {/* Users table */}

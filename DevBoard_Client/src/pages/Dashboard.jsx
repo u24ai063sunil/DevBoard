@@ -3,6 +3,8 @@ import Navbar from '../components/Navbar'
 import ProjectCard from '../components/ProjectCard'
 import CreateProjectModal from '../components/CreateProjectModal'
 import { useProjects } from '../hooks/useProjects'
+import { exportProjectsToCSV } from '../utils/exportUtils'
+import { showSuccess, showError } from '../utils/toast'
 
 const Dashboard = () => {
   const [showModal, setShowModal]   = useState(false)
@@ -10,7 +12,14 @@ const Dashboard = () => {
   const { data, isLoading, isError } = useProjects()
 
   const projects = data?.data || []
-
+    const handleExportProjects = () => {
+    const success = exportProjectsToCSV(projects)
+    if (success) {
+      showSuccess(`Exported ${projects.length} projects to CSV!`)
+    } else {
+      showError('No projects to export')
+    }
+  }
   // Filter projects by status
   const filtered = filter === 'all'
     ? projects
@@ -31,12 +40,25 @@ const Dashboard = () => {
               {projects.length} project{projects.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-          >
-            + New Project
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportProjects}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              + New Project
+            </button>
+          </div>
         </div>
 
         {/* Filter tabs */}

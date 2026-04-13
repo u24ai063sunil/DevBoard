@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { exportAnalyticsToCSV } from '../utils/exportUtils'
+import { showSuccess } from '../utils/toast'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -40,7 +42,10 @@ const Analytics = () => {
   const { data: byPriority }  = useQuery({ queryKey: ['analytics-priority'],    queryFn: getTasksByPriority })
   const { data: overTime }    = useQuery({ queryKey: ['analytics-time'],        queryFn: getTasksOverTime })
   const { data: projectProg } = useQuery({ queryKey: ['analytics-projects'],    queryFn: getProjectProgress })
-
+  const handleExportAnalytics = () => {
+    exportAnalyticsToCSV(overview, byStatus, byPriority)
+    showSuccess('Analytics exported to CSV!')
+  }
   return (
     <div className="min-h-screen bg-gray-950">
       <Navbar />
@@ -48,11 +53,19 @@ const Analytics = () => {
       <main className="max-w-6xl mx-auto px-6 py-8">
 
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Analytics</h1>
-            <p className="text-gray-400 text-sm mt-1">Your productivity at a glance</p>
-          </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportAnalytics}
+            disabled={!overview}
+            className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export CSV
+          </button>
           <button
             onClick={() => navigate('/dashboard')}
             className="text-gray-400 hover:text-white text-sm transition"

@@ -16,6 +16,8 @@ import KanbanBoard from '../components/KanbanBoard'
 const statusColumns = ['todo', 'in-progress', 'in-review', 'done']
 const columnLabels  = { 'todo': 'Todo', 'in-progress': 'In Progress', 'in-review': 'In Review', 'done': 'Done' }
 const columnColors  = { 'todo': 'border-gray-700', 'in-progress': 'border-blue-500/30', 'in-review': 'border-yellow-500/30', 'done': 'border-green-500/30' }
+import { exportTasksToCSV } from '../utils/exportUtils'
+import { showSuccess, showError } from '../utils/toast'
 
 const ProjectDetail = () => {
   const { id } = useParams()
@@ -34,7 +36,6 @@ const ProjectDetail = () => {
 
   const [liveConnected, setLiveConnected] = useState(false)
   const [viewerCount, setViewerCount] = useState(1)
-
   useEffect(() => {
     if (!id) return
 
@@ -94,7 +95,14 @@ const ProjectDetail = () => {
     return acc
   }, {})
   const onlineUsers = usePresenceStore((s) => s.onlineUsers)
-
+  const handleExportTasks = () => {
+    const success = exportTasksToCSV(allTasks, project.name)
+    if (success) {
+      showSuccess(`Exported ${allTasks.length} tasks to CSV!`)
+    } else {
+      showError('No tasks to export')
+    }
+  }
   const onlineMembers = project
     ? [
         project.owner,
@@ -182,18 +190,32 @@ const ProjectDetail = () => {
               <span className="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">{doneCount} done</span>
             </div>
           </div>
-          <button
-            onClick={() => setShowMembers(true)}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg transition"
-          >
-            Team
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-          >
-            + Add Task
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportTasks}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2"
+            >
+              {/* Download icon */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export
+            </button>
+            <button
+              onClick={() => setShowMembers(true)}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              Team
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              + Add Task
+            </button>
+          </div>
           
         </div>
 
