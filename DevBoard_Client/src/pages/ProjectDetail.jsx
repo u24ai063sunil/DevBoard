@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import TaskCard from '../components/TaskCard'
@@ -18,6 +18,7 @@ const columnLabels  = { 'todo': 'Todo', 'in-progress': 'In Progress', 'in-review
 const columnColors  = { 'todo': 'border-gray-700', 'in-progress': 'border-blue-500/30', 'in-review': 'border-yellow-500/30', 'done': 'border-green-500/30' }
 import { exportTasksToCSV } from '../utils/exportUtils'
 import { showSuccess, showError } from '../utils/toast'
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts'
 
 const ProjectDetail = () => {
   const { id } = useParams()
@@ -119,6 +120,13 @@ const ProjectDetail = () => {
   const dueTodayCount = allTasks.filter(t =>
     getDueDateStatus(t.dueDate, t.status)?.type === 'today'
   ).length
+  const searchRef = useRef(null)
+
+  useKeyboardShortcuts({
+    onNewTask: () => setShowModal(true),
+    onSearch:  () => searchRef.current?.focus(),
+    onExport:  handleExportTasks,
+  })
   if (projectLoading) {
     return (
       <div className="min-h-screen transition-colors duration-200"
@@ -272,6 +280,7 @@ const ProjectDetail = () => {
         )}
         {/* Search + Filters */}
         <TaskFilters
+          searchRef={searchRef}
           search={search}     setSearch={setSearch}
           priority={priority} setPriority={setPriority}
           status={status}     setStatus={setStatus}

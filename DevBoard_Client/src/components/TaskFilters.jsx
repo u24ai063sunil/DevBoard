@@ -1,10 +1,11 @@
-const TaskFilters = ({ search, setSearch, priority, setPriority, status, setStatus, label, setLabel }) => {
+const TaskFilters = ({ searchRef, search, setSearch, priority, setPriority, status, setStatus, label, setLabel }) => {
   return (
     <div className="flex flex-wrap gap-3 mb-6">
 
       {/* Search */}
       <div className="flex-1 min-w-48">
         <input
+          ref={searchRef}
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

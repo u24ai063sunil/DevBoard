@@ -5,6 +5,7 @@ import CreateProjectModal from '../components/CreateProjectModal'
 import { useProjects } from '../hooks/useProjects'
 import { exportProjectsToCSV } from '../utils/exportUtils'
 import { showSuccess, showError } from '../utils/toast'
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts'
 
 const Dashboard = () => {
   const [showModal, setShowModal]   = useState(false)
@@ -24,7 +25,10 @@ const Dashboard = () => {
   const filtered = filter === 'all'
     ? projects
     : projects.filter((p) => p.status === filter)
-
+    useKeyboardShortcuts({
+    onNewProject: () => setShowModal(true),
+    onExport:     handleExportProjects,
+  })
   return (
     <div className="min-h-screen transition-colors duration-200"
      style={{ backgroundColor: 'var(--bg-primary)' }}>

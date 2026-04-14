@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import api from './api/axios'
 import Footer from './components/Footer'
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal'
 
 function App() {
   const { isAuthenticated, updateUser } = useAuthStore()
@@ -63,6 +64,7 @@ function App() {
         <Route path="/reset-password"  element={<ResetPassword />} />
       </Routes>
       <Footer />
+      <KeyboardShortcutsModal />
       </div>
     </BrowserRouter>
   )
