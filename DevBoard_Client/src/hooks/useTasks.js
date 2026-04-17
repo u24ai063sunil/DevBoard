@@ -54,20 +54,49 @@ export const useCreateTask = (projectId) => {
 
 export const useUpdateTask = (projectId) => {
   const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async ({ id, data }) => {
       const res = await api.patch(`/projects/${projectId}/tasks/${id}`, data)
       return res.data
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-      // Only show toast for meaningful updates not status drags
-      if (data.data.title) {
-        showSuccess('Task updated!')
-      }
+
+    // Optimistically update cache BEFORE server responds
+    onMutate: async ({ id, data }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] })
+
+      // Snapshot current data for rollback
+      const previousTasks = queryClient.getQueryData(['tasks', projectId])
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['tasks', projectId], (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          data: old.data.map((task) =>
+            task._id === id
+              ? { ...task, ...data }
+              : task
+          ),
+        }
+      })
+
+      // Return snapshot for rollback
+      return { previousTasks }
     },
-    onError: (err) => {
+
+    // If mutation fails — roll back to previous data
+    onError: (err, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', projectId], context.previousTasks)
+      }
       showError(err.response?.data?.message || 'Failed to update task')
+    },
+
+    // Always refetch after success or failure
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
     },
   })
 }
